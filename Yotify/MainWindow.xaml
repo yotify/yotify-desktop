@@ -11,11 +11,12 @@
         WindowStyle="None"
         ResizeMode="NoResize"
         Background="Transparent"
-        AllowsTransparency="True">
+        AllowsTransparency="True" 
+        WindowStartupLocation="CenterScreen">
     <Window.DataContext>
         <viewModel:MainViewModel />
     </Window.DataContext>
-    
+
     <Border Background="#1e1e1e" CornerRadius="10">
         <Grid>
             <Grid.ColumnDefinitions>
