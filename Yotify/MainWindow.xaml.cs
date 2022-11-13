@@ -24,5 +24,11 @@ namespace Yotify
         {
             InitializeComponent();
         }
+
+        private void DragWithHeader(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+                DragMove();
+        }
     }
 }

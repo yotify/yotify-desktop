@@ -35,7 +35,16 @@
                        FontSize="24" 
                        Grid.Row="0"
                        Grid.Column="0"
-                       Margin="25,0,0,0"/>
+                       Margin="25,0,0,0" />
+
+            <!-- Draggable Header -->
+            <StackPanel
+                Grid.Row="0" 
+                Grid.ColumnSpan="2"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                MouseDown="DragWithHeader" 
+                Background="Transparent"/>
 
             <StackPanel Grid.Column="0"
                         Grid.Row="1">
