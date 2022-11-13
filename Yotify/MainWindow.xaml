@@ -28,6 +28,7 @@
             </Grid.RowDefinitions>
             
             <TextBlock Text="Yotify"
+                       FontFamily="/Resources/Fonts/#Manrope"
                        VerticalAlignment="Center"
                        HorizontalAlignment="Left"
                        Foreground="White"

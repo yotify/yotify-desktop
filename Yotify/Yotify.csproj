@@ -8,7 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Components\" />
+    <None Remove="Resources\Fonts\Manrope-Regular.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Fonts\Manrope-Regular.ttf" />
   </ItemGroup>
 
 </Project>
