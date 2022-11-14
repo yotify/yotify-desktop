@@ -28,6 +28,13 @@
             <Trigger Property="IsChecked" Value="True">
                 <Setter Property="Background" Value="#101010" />
             </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsMouseOver" Value="True" />
+                    <Condition Property="IsChecked" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="#2e2e2e" />
+            </MultiTrigger>
         </Style.Triggers>
     </Style>
 </ResourceDictionary>
