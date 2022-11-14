@@ -38,6 +38,33 @@
                        Grid.Column="0"
                        Margin="25,0,0,0" />
 
+            <StackPanel 
+                Grid.Column="1"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Height="30"
+                Orientation="Horizontal"
+                Panel.ZIndex="1">
+                <Button
+                    x:Name="Minimize"
+                    Content="-"
+                    Width="30"
+                    Margin="0,5,5,0" 
+                    Click="Minimize_Click" />
+                <Button 
+                    x:Name="Maximize"
+                    Content="M"
+                    Width="30"
+                    Margin="0,5,5,0" 
+                    Click="Maximize_Click" />
+                <Button
+                    x:Name="Close"
+                    Content="X" 
+                    Width="30"
+                    Margin="0,5,5,0"
+                    Click="Close_Click" />
+            </StackPanel>
+
             <!-- Draggable Header -->
             <StackPanel
                 Grid.Row="0" 
