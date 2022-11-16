@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+	<appSettings>
+		<add key="google_client_id" value=""/>
+		<add key="google_client_secret" value=""/>	
+	</appSettings>
+</configuration>

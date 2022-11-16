@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 using Yotify.Core;
+using Yotify.Data.Authentication.Authenticator;
 
 namespace Yotify.ViewModel
 {
@@ -14,6 +10,7 @@ namespace Yotify.ViewModel
 
         public RelayCommand PlaylistsViewCommand { get; set; }
 
+        public RelayCommand LoginCommand { get; set; }
 
         public HomeViewModel HomeVM { get; set; }
 
@@ -51,6 +48,15 @@ namespace Yotify.ViewModel
             {
                 Debug.WriteLine("set playlists as current");
                 CurrentView = PlaylistsVM;
+            });
+
+            // TODO: handle result async
+            LoginCommand = new RelayCommand(o =>
+            {
+                Debug.WriteLine("Authentication started.");
+                GoogleAuthenticator googleAuth = new GoogleAuthenticator();
+
+                googleAuth.Authenticate();
             });
         }
     }

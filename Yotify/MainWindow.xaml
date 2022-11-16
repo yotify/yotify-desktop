@@ -90,6 +90,12 @@
                              Foreground="White"
                              FontSize="14"
                              Style="{StaticResource MenuButtonTheme}" />
+                <RadioButton Content="Login"
+                             Height="50"
+                             Foreground="White"
+                             FontSize="14"
+                             Style="{StaticResource MenuButtonTheme}"
+                             Command="{Binding LoginCommand}" />
             </StackPanel>
 
             <ContentControl Grid.Row="1"
