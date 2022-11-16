@@ -51,7 +51,7 @@
                     Style="{StaticResource RoundButtonTheme}" />
                 <Button 
                     x:Name="Maximize"
-                    Content="M"
+                    Content="⛶"
                     Click="Maximize_Click"
                     Style="{StaticResource RoundButtonTheme}" />
                 <Button
