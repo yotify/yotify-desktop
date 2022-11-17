@@ -1,6 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
+using System.Text.Json;
 using Yotify.Core;
 using Yotify.Data.Authentication.Authenticator;
+using Yotify.Data.Authentication.Token;
 
 namespace Yotify.ViewModel
 {
@@ -16,9 +19,9 @@ namespace Yotify.ViewModel
 
         public PlaylistsViewModel PlaylistsVM { get; set; }
 
-        private object _currentView;
+        private object? _currentView;
 
-        public object CurrentView
+        public object? CurrentView
         {
             get { 
                 return _currentView;
@@ -50,13 +53,14 @@ namespace Yotify.ViewModel
                 CurrentView = PlaylistsVM;
             });
 
-            // TODO: handle result async
-            LoginCommand = new RelayCommand(o =>
+            LoginCommand = new RelayCommand(async o =>
             {
                 Debug.WriteLine("Authentication started.");
-                GoogleAuthenticator googleAuth = new GoogleAuthenticator();
+                GoogleAuthenticator googleAuth = new();
 
-                googleAuth.Authenticate();
+                AuthToken token = await googleAuth.Authenticate();
+                TokenStorage.StoreToken(token);
+                Debug.WriteLine(String.Format("Saved token. Current Token content: {0}", JsonSerializer.Serialize(token)));
             });
         }
     }
