@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 
 namespace Yotify.Data.Authentication.Token
 {
@@ -12,7 +13,18 @@ namespace Yotify.Data.Authentication.Token
 
         public static AuthToken? GetToken()
         {
-            return JsonSerializer.Deserialize<AuthToken>(Properties.Settings.Default.AuthToken);
+            string tokenJson = Properties.Settings.Default.AuthToken;
+
+            if (tokenJson == "")
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<AuthToken>(Properties.Settings.Default.AuthToken);
+            } catch(JsonException)
+            {
+                return null;
+            }
         }
     }
 }
