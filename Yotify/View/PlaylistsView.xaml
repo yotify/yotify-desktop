@@ -12,12 +12,12 @@
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <Image Source="{Binding ThumbnailURL}" Width="150"/>
+                        <Image Source="{Binding ThumbnailURL}" Width="150" />
                         <StackPanel>
-                            <Label Content="{Binding Name}"  Foreground="White"/>
-                            <Label Content="{Binding Description}"  Foreground="White"/>
-                            <Label Content="{Binding PlaylistURL}"  Foreground="White"/>
-                            <Label Content="{Binding ThumbnailURL}"  Foreground="White"/>
+                            <Label Content="{Binding Name}" Foreground="White" />
+                            <Label Content="{Binding Description}" Foreground="White" />
+                            <Label Content="{Binding PlaylistURL}" Foreground="White" />
+                            <Label Content="{Binding ThumbnailURL}" Foreground="White" />
                         </StackPanel>
                     </StackPanel>
                 </DataTemplate>
