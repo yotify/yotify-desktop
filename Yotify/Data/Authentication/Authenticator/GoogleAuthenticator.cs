@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using Yotify.Data.Authentication.Token;
 using System.Configuration;
+using System.Net.Http;
 
 namespace Yotify.Data.Authentication.Authenticator
 {
@@ -22,13 +23,15 @@ namespace Yotify.Data.Authentication.Authenticator
         private const string tokenEndpoint = "https://www.googleapis.com/oauth2/v4/token";
         private const string scope = "https://www.googleapis.com/auth/youtube profile";
 
+        private HttpClient? httpClient = null;
+
         public GoogleAuthenticator()
         {
             clientId = ConfigurationManager.AppSettings["google_client_id"] ?? "";
             clientSecret = ConfigurationManager.AppSettings["google_client_secret"] ?? "";
         }
 
-        public async Task<AuthToken> Authenticate() // TODO: return Token Object
+        public async Task<AuthToken> Authenticate()
         {
             string codeVerifier = GenerateRandomUrlEncodedBase64(32);
             string codeChallenge = ConvertToUrlEncodedBase64(Sha256(codeVerifier));
@@ -39,8 +42,9 @@ namespace Yotify.Data.Authentication.Authenticator
 
             HttpListener http = new();
             http.Prefixes.Add(redirectUri);
-            Debug.WriteLine("Listening..");
             http.Start();
+
+            Debug.WriteLine("Listener started.");
 
             string queryString = BuildQueryString(new Dictionary<string, string>()
             {
@@ -81,14 +85,7 @@ namespace Yotify.Data.Authentication.Authenticator
             {
                 string code = ExtractCodeFromContext(state, context);
 
-                try
-                {
-                    return await ExchangeCodeForTokens(code, codeVerifier, redirectUri);
-                }
-                catch (InvalidResponseException ex)
-                {
-                    throw new AuthenticationException("Auth failed: invalid response", ex);
-                }
+                return await ExchangeCodeForTokens(code, codeVerifier, redirectUri);
             }
             catch (InvalidStateException ex)
             {
@@ -100,53 +97,54 @@ namespace Yotify.Data.Authentication.Authenticator
             }
         }
 
-        public async Task<AuthToken> RefreshToken(AuthToken token) // TODO: better exceptions
+        public async Task<AuthToken> RefreshToken(AuthToken token)
         {
-            string redirectUri = string.Format("http://{0}:{1}/", IPAddress.Loopback, GetRandomUnusedPort());
-
-            HttpListener http = new();
-            http.Prefixes.Add(redirectUri);
-            Debug.WriteLine("Listening..");
-            http.Start();
-
             AuthToken? currentToken = TokenStorage.GetToken();
 
             if (currentToken == null)
                 throw new AuthenticationException("Cannot get refreshed token for null");
 
-            string queryString = BuildQueryString(new Dictionary<string, string>()
-            {
+            Dictionary<string, string> data = new() {
                 { "refresh_token", currentToken.RefreshToken },
                 { "client_id", clientId },
                 { "client_secret", clientSecret },
                 { "grant_type", "refresh_token" },
-            });
-
-            HttpWebRequest tokenRequest = GetTokenRequest();
-
-            byte[] _byteVersion = Encoding.ASCII.GetBytes(queryString[1..]);
-            tokenRequest.ContentLength = _byteVersion.Length;
-
-            Stream stream = tokenRequest.GetRequestStream();
-            await stream.WriteAsync(_byteVersion, 0, _byteVersion.Length);
-            stream.Close();
+            };
 
             try
             {
-                WebResponse tokenResponse = await tokenRequest.GetResponseAsync();
-                using StreamReader streamReader = new(tokenResponse.GetResponseStream());
-                string responseText = await streamReader.ReadToEndAsync();
-                Debug.WriteLine(responseText);
+                Dictionary<string, string> tokenData = await GetTokenData(data);
 
-                Dictionary<string, string> tokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseText);
+                return new AuthToken(
+                    tokenData["id_token"],
+                    tokenData["access_token"],
+                    token.RefreshToken,
+                    tokenData["token_type"],
+                    tokenData["scope"].Split(" "),
+                    Convert.ToInt32(tokenData["expires_in"])
+                ); // TODO: ParseInt maybe
+            }
+            catch (InvalidResponseException ex)
+            {
+                throw new AuthenticationException("Authentication failed", ex);
+            }
+        }
 
-                if (tokenData == null)
-                {
-                    throw new InvalidResponseException("Invalid response json data");
-                }
+        private async Task<AuthToken> ExchangeCodeForTokens(string code, string codeVerifier, string redirectURI)
+        {
+            Dictionary<string, string> data = new() {
+                { "code", code },
+                { "redirect_uri", redirectURI },
+                { "client_id", clientId },
+                { "code_verifier", codeVerifier },
+                { "client_secret", clientSecret },
+                { "scope", "" },
+                { "grant_type", "authorization_code" },
+            };
 
-                if (!tokenData.ContainsKey("refresh_token"))
-                    tokenData.Add("refresh_token", token.RefreshToken);
+            try
+            {
+                Dictionary<string, string> tokenData = await GetTokenData(data);
 
                 return new AuthToken(
                     tokenData["id_token"],
@@ -157,26 +155,50 @@ namespace Yotify.Data.Authentication.Authenticator
                     Convert.ToInt32(tokenData["expires_in"]) // TODO: ParseInt maybe
                 );
             }
-            catch (WebException ex)
+            catch (InvalidResponseException ex)
             {
-                if (ex.Status == WebExceptionStatus.ProtocolError)
-                {
-                    throw new InvalidResponseException(String.Format("Invalid reponse status ({0})", ex.Status.ToString()), ex);
-                }
-
-                throw new InvalidResponseException("Invalid response");
+                throw new AuthenticationException("Authentication failed", ex);
             }
         }
 
-
-        private HttpWebRequest GetTokenRequest()
+        private async Task<Dictionary<string, string>> GetTokenData(Dictionary<string, string> data)
         {
-            HttpWebRequest tokenRequest = (HttpWebRequest)WebRequest.Create(tokenEndpoint);
-            tokenRequest.Method = "POST";
-            tokenRequest.ContentType = "application/x-www-form-urlencoded";
-            tokenRequest.Accept = "Accept=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+            var content = new FormUrlEncodedContent(data);
 
-            return tokenRequest;
+            HttpClient client = GetTokenClient();
+            var response = await client.PostAsync("", content);
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new InvalidResponseException(String.Format("Invalid reponse status ({0})", response.StatusCode));
+            }
+
+            var responseString = await response.Content.ReadAsStringAsync();
+            Debug.WriteLine($"Response: {responseString}");
+
+            Dictionary<string, string>? tokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseString);
+
+            if (tokenData == null)
+            {
+                throw new InvalidResponseException("Ivalid response json content");
+            }
+
+            return tokenData;
+        }
+
+        private HttpClient GetTokenClient()
+        {
+            if (this.httpClient != null)
+            {
+                return this.httpClient;
+            }
+
+            HttpClient client = new HttpClient();
+            client.BaseAddress = new Uri(tokenEndpoint);
+            client.Timeout = new TimeSpan(0, 0, 0, 5);
+            this.httpClient = client;
+
+            return client;
         }
 
         private int GetRandomUnusedPort()
@@ -224,7 +246,7 @@ namespace Yotify.Data.Authentication.Authenticator
         {
             string queryString = "";
 
-            bool first = true; // TODO: refactor
+            bool first = true;
             foreach (KeyValuePair<string, string> param in queryParams)
             {
                 if (first == true)
@@ -262,64 +284,6 @@ namespace Yotify.Data.Authentication.Authenticator
             byte[] bytes = Encoding.ASCII.GetBytes(inputString);
 
             return SHA256.Create().ComputeHash(bytes);
-        }
-
-        private async Task<AuthToken> ExchangeCodeForTokens(string code, string codeVerifier, string redirectURI)
-        {
-            Debug.WriteLine("Exchanging code with tokens");
-
-            string queryString = BuildQueryString(new Dictionary<string, string>()
-            {
-                { "code", code },
-                { "redirect_uri", Uri.EscapeDataString(redirectURI) },
-                { "client_id", clientId },
-                { "code_verifier", codeVerifier },
-                { "client_secret", clientSecret },
-                { "scope", "" },
-                { "grant_type", "authorization_code" },
-            });
-
-            HttpWebRequest tokenRequest = GetTokenRequest();
-
-            byte[] _byteVersion = Encoding.ASCII.GetBytes(queryString[1..]);
-            tokenRequest.ContentLength = _byteVersion.Length;
-
-            Stream stream = tokenRequest.GetRequestStream();
-            await stream.WriteAsync(_byteVersion, 0, _byteVersion.Length);
-            stream.Close();
-
-            try
-            {
-                WebResponse tokenResponse = await tokenRequest.GetResponseAsync();
-                using StreamReader streamReader = new(tokenResponse.GetResponseStream());
-                string responseText = await streamReader.ReadToEndAsync();
-                Debug.WriteLine(responseText);
-
-                Dictionary<string, string> tokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseText);
-
-                if (tokenData == null)
-                {
-                    throw new InvalidResponseException("Invalid response json data");
-                }
-
-                return new AuthToken(
-                    tokenData["id_token"],
-                    tokenData["access_token"],
-                    tokenData["refresh_token"],
-                    tokenData["token_type"],
-                    tokenData["scope"].Split(" "),
-                    Convert.ToInt32(tokenData["expires_in"]) // TODO: ParseInt maybe
-                );
-            }
-            catch (WebException ex)
-            {
-                if (ex.Status == WebExceptionStatus.ProtocolError)
-                {
-                    throw new InvalidResponseException(String.Format("Invalid reponse status ({0})", ex.Status.ToString()), ex);
-                }
-
-                throw new InvalidResponseException("Invalid response");
-            }
         }
     }
 }
