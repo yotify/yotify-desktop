@@ -28,16 +28,6 @@ namespace Yotify.Data.Authentication.Authenticator
             clientSecret = ConfigurationManager.AppSettings["google_client_secret"] ?? "";
         }
 
-        private int GetRandomUnusedPort()
-        {
-            var listener = new TcpListener(IPAddress.Loopback, 0);
-            listener.Start();
-            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-            listener.Stop();
-
-            return port;
-        }
-
         public async Task<AuthToken> Authenticate() // TODO: return Token Object
         {
             string codeVerifier = GenerateRandomUrlEncodedBase64(32);
@@ -108,6 +98,87 @@ namespace Yotify.Data.Authentication.Authenticator
             {
                 throw new AuthenticationException("Auth failed: invalid code", ex);
             }
+        }
+
+        public async Task<AuthToken> RefreshToken(AuthToken token) // TODO: better exceptions
+        {
+            string redirectUri = string.Format("http://{0}:{1}/", IPAddress.Loopback, GetRandomUnusedPort());
+
+            HttpListener http = new();
+            http.Prefixes.Add(redirectUri);
+            Debug.WriteLine("Listening..");
+            http.Start();
+
+            AuthToken? currentToken = TokenStorage.GetToken();
+
+            if (currentToken == null)
+                throw new AuthenticationException("Cannot get refreshed token for null");
+
+            string queryString = BuildQueryString(new Dictionary<string, string>()
+            {
+                { "refresh_token", currentToken.RefreshToken },
+                { "client_id", clientId },
+                { "client_secret", clientSecret },
+                { "grant_type", "refresh_token" },
+            });
+
+            HttpWebRequest tokenRequest = (HttpWebRequest)WebRequest.Create(tokenEndpoint);
+            tokenRequest.Method = "POST";
+            tokenRequest.ContentType = "application/x-www-form-urlencoded";
+            tokenRequest.Accept = "Accept=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+
+            byte[] _byteVersion = Encoding.ASCII.GetBytes(queryString[1..]);
+            tokenRequest.ContentLength = _byteVersion.Length;
+
+            Stream stream = tokenRequest.GetRequestStream();
+            await stream.WriteAsync(_byteVersion, 0, _byteVersion.Length);
+            stream.Close();
+
+            try
+            {
+                WebResponse tokenResponse = await tokenRequest.GetResponseAsync();
+                using StreamReader streamReader = new(tokenResponse.GetResponseStream());
+                string responseText = await streamReader.ReadToEndAsync();
+                Debug.WriteLine(responseText);
+
+                Dictionary<string, string> tokenData = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseText);
+
+                if (tokenData == null)
+                {
+                    throw new InvalidResponseException("Invalid response json data");
+                }
+
+                if (!tokenData.ContainsKey("refresh_token"))
+                    tokenData.Add("refresh_token", token.RefreshToken);
+
+                return new AuthToken(
+                    tokenData["id_token"],
+                    tokenData["access_token"],
+                    tokenData["refresh_token"],
+                    tokenData["token_type"],
+                    tokenData["scope"].Split(" "),
+                    Convert.ToInt32(tokenData["expires_in"]) // TODO: ParseInt maybe
+                );
+            }
+            catch (WebException ex)
+            {
+                if (ex.Status == WebExceptionStatus.ProtocolError)
+                {
+                    throw new InvalidResponseException(String.Format("Invalid reponse status ({0})", ex.Status.ToString()), ex);
+                }
+
+                throw new InvalidResponseException("Invalid response");
+            }
+        }
+
+        private int GetRandomUnusedPort()
+        {
+            var listener = new TcpListener(IPAddress.Loopback, 0);
+            listener.Start();
+            var port = ((IPEndPoint)listener.LocalEndpoint).Port;
+            listener.Stop();
+
+            return port;
         }
 
         private string ExtractCodeFromContext(string state, HttpListenerContext context)
@@ -231,7 +302,7 @@ namespace Yotify.Data.Authentication.Authenticator
                     tokenData["access_token"],
                     tokenData["refresh_token"],
                     tokenData["token_type"],
-                    (tokenData["scope"] ?? "").Split(" "),
+                    tokenData["scope"].Split(" "),
                     Convert.ToInt32(tokenData["expires_in"]) // TODO: ParseInt maybe
                 );
             }

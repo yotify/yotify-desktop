@@ -55,11 +55,22 @@ namespace Yotify.ViewModel
 
             LoginCommand = new RelayCommand(async o =>
             {
-                Debug.WriteLine("Authentication started.");
-                GoogleAuthenticator googleAuth = new();
+                IAuthenticator authenticator = new GoogleAuthenticator();
 
-                AuthToken token = await googleAuth.Authenticate();
+                AuthToken? token = TokenStorage.GetToken();
+
+                if (token == null)
+                {
+                    Debug.WriteLine("No token found. Starting authentication...");
+                    token = await authenticator.Authenticate(); // TODO: handle exception
+                    TokenStorage.StoreToken(token);
+                    return;
+                }
+                token = await authenticator.RefreshToken(token); // TODO: pass reference & update
+                // TODO:    if refresh token generation fails -> start auth code flow
+                // TODO:    handle exceptions
                 TokenStorage.StoreToken(token);
+
                 Debug.WriteLine(String.Format("Saved token. Current Token content: {0}", JsonSerializer.Serialize(token)));
             });
         }

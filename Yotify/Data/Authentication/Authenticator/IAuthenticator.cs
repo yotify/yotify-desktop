@@ -6,5 +6,7 @@ namespace Yotify.Data.Authentication.Authenticator
     interface IAuthenticator
     {
         public Task<AuthToken> Authenticate();
+
+        public Task<AuthToken> RefreshToken(AuthToken token);
     }
 }
