@@ -5,15 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Diagnostics;
-using Yotify.Data.Authentication.Authenticator.Exception;
+using Yotify.Authentication.Authenticator.Exception;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
-using Yotify.Data.Authentication.Token;
+using Yotify.Authentication.Token;
 using System.Configuration;
 using System.Net.Http;
 
-namespace Yotify.Data.Authentication.Authenticator
+namespace Yotify.Authentication.Authenticator
 {
     class GoogleAuthenticator : IAuthenticator
     {

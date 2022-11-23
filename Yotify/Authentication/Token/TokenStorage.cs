@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace Yotify.Data.Authentication.Token
+namespace Yotify.Authentication.Token
 {
     internal class TokenStorage
     {

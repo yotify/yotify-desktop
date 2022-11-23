@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Yotify.Data.Authentication.Token.Exception
+namespace Yotify.Authentication.Token.Exception
 {
 	[Serializable]
 	public class InvalidTokenException : System.Exception

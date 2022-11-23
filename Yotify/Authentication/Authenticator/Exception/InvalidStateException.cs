@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Yotify.Data.Authentication.Authenticator.Exception
+namespace Yotify.Authentication.Authenticator.Exception
 {
     [Serializable]
     public class InvalidStateException : System.Exception

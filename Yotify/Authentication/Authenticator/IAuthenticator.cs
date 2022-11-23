@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
-using Yotify.Data.Authentication.Token;
+using Yotify.Authentication.Token;
 
-namespace Yotify.Data.Authentication.Authenticator
+namespace Yotify.Authentication.Authenticator
 {
     interface IAuthenticator
     {
