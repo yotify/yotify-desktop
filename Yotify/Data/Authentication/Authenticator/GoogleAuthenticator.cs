@@ -122,10 +122,7 @@ namespace Yotify.Data.Authentication.Authenticator
                 { "grant_type", "refresh_token" },
             });
 
-            HttpWebRequest tokenRequest = (HttpWebRequest)WebRequest.Create(tokenEndpoint);
-            tokenRequest.Method = "POST";
-            tokenRequest.ContentType = "application/x-www-form-urlencoded";
-            tokenRequest.Accept = "Accept=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+            HttpWebRequest tokenRequest = GetTokenRequest();
 
             byte[] _byteVersion = Encoding.ASCII.GetBytes(queryString[1..]);
             tokenRequest.ContentLength = _byteVersion.Length;
@@ -169,6 +166,17 @@ namespace Yotify.Data.Authentication.Authenticator
 
                 throw new InvalidResponseException("Invalid response");
             }
+        }
+
+
+        private HttpWebRequest GetTokenRequest()
+        {
+            HttpWebRequest tokenRequest = (HttpWebRequest)WebRequest.Create(tokenEndpoint);
+            tokenRequest.Method = "POST";
+            tokenRequest.ContentType = "application/x-www-form-urlencoded";
+            tokenRequest.Accept = "Accept=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+
+            return tokenRequest;
         }
 
         private int GetRandomUnusedPort()
@@ -271,10 +279,7 @@ namespace Yotify.Data.Authentication.Authenticator
                 { "grant_type", "authorization_code" },
             });
 
-            HttpWebRequest tokenRequest = (HttpWebRequest)WebRequest.Create(tokenEndpoint);
-            tokenRequest.Method = "POST";
-            tokenRequest.ContentType = "application/x-www-form-urlencoded";
-            tokenRequest.Accept = "Accept=text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+            HttpWebRequest tokenRequest = GetTokenRequest();
 
             byte[] _byteVersion = Encoding.ASCII.GetBytes(queryString[1..]);
             tokenRequest.ContentLength = _byteVersion.Length;
