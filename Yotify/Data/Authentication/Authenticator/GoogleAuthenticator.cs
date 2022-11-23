@@ -121,8 +121,8 @@ namespace Yotify.Data.Authentication.Authenticator
                     token.RefreshToken,
                     tokenData["token_type"],
                     tokenData["scope"].Split(" "),
-                    Convert.ToInt32(tokenData["expires_in"])
-                ); // TODO: ParseInt maybe
+                    DateTime.Now.AddSeconds(Convert.ToInt32(tokenData["expires_in"]))
+                );
             }
             catch (InvalidResponseException ex)
             {
@@ -152,7 +152,7 @@ namespace Yotify.Data.Authentication.Authenticator
                     tokenData["refresh_token"],
                     tokenData["token_type"],
                     tokenData["scope"].Split(" "),
-                    Convert.ToInt32(tokenData["expires_in"]) // TODO: ParseInt maybe
+                    DateTime.Now.AddSeconds(Convert.ToInt32(tokenData["expires_in"]))
                 );
             }
             catch (InvalidResponseException ex)

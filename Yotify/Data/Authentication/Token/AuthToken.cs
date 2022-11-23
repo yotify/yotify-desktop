@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Yotify.Data.Authentication.Token
 {
@@ -10,7 +9,7 @@ namespace Yotify.Data.Authentication.Token
         public string RefreshToken { get; private set; }
         public string TokenType { get; private set; }
         public string[] Scopes { get; private set; }
-        public int ExpireTime { get; private set; } // TODO: calculate timestamp
+        public DateTime ExpireTime { get; private set; }
 
         public AuthToken(
             string tokenId, 
@@ -18,7 +17,7 @@ namespace Yotify.Data.Authentication.Token
             string refreshToken, 
             string tokenType, 
             string[] scopes, 
-            int expireTime
+            DateTime expireTime
         )
         {
             TokenId = tokenId;
