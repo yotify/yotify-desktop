@@ -4,10 +4,39 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Yotify.View"
+             xmlns:viewModel="clr-namespace:Yotify.ViewModel"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
              Background="#1a1a1a">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition MaxHeight="50"/>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <StackPanel 
+            Orientation="Horizontal"
+            Grid.Row="0">
+
+            <Button Height="45" Width="70" Content="Fetch" Command="{Binding PlaylistsCommand}" />
             
+
+        </StackPanel>
+        <ListBox Name="cList"
+                 Grid.Row="1"
+                 ItemsSource="{Binding Playlists}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold"
+                                   Foreground="Black"
+                                   Text="{Binding Name}" />
+                        <TextBlock Text=", " />
+                        <TextBlock FontWeight="Bold"
+                                   Foreground="Black"
+                                   Text="{Binding LastName}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </Grid>
 </UserControl>
