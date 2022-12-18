@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Text.Json;
+using Yotify.Authentication.Authenticator;
+using Yotify.Authentication.Token;
 using Yotify.Core;
-using Yotify.Data.Authentication.Authenticator;
-using Yotify.Data.Authentication.Token;
 
 namespace Yotify.ViewModel
 {
@@ -62,16 +62,17 @@ namespace Yotify.ViewModel
                 if (token == null)
                 {
                     Debug.WriteLine("No token found. Starting authentication...");
-                    token = await authenticator.Authenticate(); // TODO: handle exception
-                    TokenStorage.StoreToken(token);
+                    await authenticator.Authenticate(); // TODO: handle exception
+
+                    Debug.WriteLine(String.Format("Saved token. Current Token content: {0}", JsonSerializer.Serialize(TokenStorage.GetToken())));
+
                     return;
                 }
-                token = await authenticator.RefreshToken(token); // TODO: pass reference & update
+
+                await authenticator.RefreshToken();
                 // TODO:    if refresh token generation fails -> start auth code flow
                 // TODO:    handle exceptions
-                TokenStorage.StoreToken(token);
-
-                Debug.WriteLine(String.Format("Saved token. Current Token content: {0}", JsonSerializer.Serialize(token)));
+                Debug.WriteLine(String.Format("Saved token. Current Token content: {0}", JsonSerializer.Serialize(TokenStorage.GetToken())));
             });
         }
     }

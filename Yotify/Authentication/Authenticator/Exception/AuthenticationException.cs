@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Yotify.Data.Authentication.Authenticator.Exception
+namespace Yotify.Authentication.Authenticator.Exception
 {
 	[Serializable]
 	public class AuthenticationException : System.Exception

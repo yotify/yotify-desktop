@@ -5,15 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Security.Cryptography;
 using System.Diagnostics;
-using Yotify.Data.Authentication.Authenticator.Exception;
+using Yotify.Authentication.Authenticator.Exception;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.IO;
-using Yotify.Data.Authentication.Token;
+using Yotify.Authentication.Token;
 using System.Configuration;
 using System.Net.Http;
 
-namespace Yotify.Data.Authentication.Authenticator
+namespace Yotify.Authentication.Authenticator
 {
     class GoogleAuthenticator : IAuthenticator
     {
@@ -31,7 +31,7 @@ namespace Yotify.Data.Authentication.Authenticator
             clientSecret = ConfigurationManager.AppSettings["google_client_secret"] ?? "";
         }
 
-        public async Task<AuthToken> Authenticate()
+        public async Task Authenticate()
         {
             string codeVerifier = GenerateRandomUrlEncodedBase64(32);
             string codeChallenge = ConvertToUrlEncodedBase64(Sha256(codeVerifier));
@@ -85,7 +85,8 @@ namespace Yotify.Data.Authentication.Authenticator
             {
                 string code = ExtractCodeFromContext(state, context);
 
-                return await ExchangeCodeForTokens(code, codeVerifier, redirectUri);
+                AuthToken token = await ExchangeCodeForTokens(code, codeVerifier, redirectUri);
+                TokenStorage.StoreToken(token);
             }
             catch (InvalidStateException ex)
             {
@@ -97,7 +98,7 @@ namespace Yotify.Data.Authentication.Authenticator
             }
         }
 
-        public async Task<AuthToken> RefreshToken(AuthToken token)
+        public async Task RefreshToken()
         {
             AuthToken? currentToken = TokenStorage.GetToken();
 
@@ -115,14 +116,16 @@ namespace Yotify.Data.Authentication.Authenticator
             {
                 Dictionary<string, string> tokenData = await GetTokenData(data);
 
-                return new AuthToken(
+                AuthToken updatedToken = new(
                     tokenData["id_token"],
                     tokenData["access_token"],
-                    token.RefreshToken,
+                    currentToken.RefreshToken,
                     tokenData["token_type"],
                     tokenData["scope"].Split(" "),
                     DateTime.Now.AddSeconds(Convert.ToInt32(tokenData["expires_in"]))
                 );
+
+                TokenStorage.StoreToken(updatedToken);
             }
             catch (InvalidResponseException ex)
             {
@@ -193,9 +196,12 @@ namespace Yotify.Data.Authentication.Authenticator
                 return this.httpClient;
             }
 
-            HttpClient client = new HttpClient();
-            client.BaseAddress = new Uri(tokenEndpoint);
-            client.Timeout = new TimeSpan(0, 0, 0, 5);
+            HttpClient client = new()
+            {
+                BaseAddress = new Uri(tokenEndpoint),
+                Timeout = new TimeSpan(0, 0, 0, 5)
+            };
+
             this.httpClient = client;
 
             return client;
