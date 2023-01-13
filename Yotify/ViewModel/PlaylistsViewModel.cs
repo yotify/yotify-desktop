@@ -1,4 +1,6 @@
-﻿using Yotify.Core;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using Yotify.Core;
 using Yotify.Data.Model.Playlist;
 
 namespace Yotify.ViewModel
